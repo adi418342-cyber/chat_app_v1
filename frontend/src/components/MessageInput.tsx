@@ -28,31 +28,36 @@ export function MessageInput({ onSend, isCapReached = false }: { onSend: (conten
 
   function handleBeforeInput(e: React.FormEvent<HTMLTextAreaElement>) {
     const native = e.nativeEvent as InputEvent;
-    // Block paste at the earliest point — before the browser inserts anything.
-    // This is the most reliable path on iOS Safari and Android WebView.
+    // Layer 1: block known paste inputTypes before the browser inserts anything.
     if (
       native.inputType === "insertFromPaste" ||
       native.inputType === "insertFromPasteAsQuotation" ||
       native.inputType === "insertFromDrop"
     ) {
       e.preventDefault();
+      return;
+    }
+    // Layer 2: if the data itself is multi-character (some mobile keyboards
+    // set inputType="insertText" but still insert clipboard content), block it.
+    if (native.data && native.data.length > 1) {
+      e.preventDefault();
     }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    const native = e.nativeEvent as InputEvent;
-    // Second layer: if beforeinput didn't stop it (older browsers/WebViews),
-    // catch it here and forcibly restore the previous DOM value.
-    if (
-      native.inputType === "insertFromPaste" ||
-      native.inputType === "insertFromPasteAsQuotation" ||
-      native.inputType === "insertFromDrop"
-    ) {
-      e.target.value = value; // restore DOM to the pre-paste state
+    const newVal = e.target.value;
+    const charsAdded = newVal.length - value.length;
+
+    // Layer 3: nuclear option — if more than 1 character was added in a single
+    // change event, it came from paste/autocomplete, not manual typing.
+    // Restore the DOM to the previous value and bail out.
+    if (charsAdded > 1) {
+      e.target.value = value;
       return;
     }
-    setValue(e.target.value);
-    // Auto-resize: reset then expand to fit content
+
+    setValue(newVal);
+    // Auto-resize
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
