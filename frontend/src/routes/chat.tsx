@@ -8,15 +8,15 @@ import { useChat } from "@/hooks/useChat";
 export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
-      { title: "Secret Chat \u2014 One-to-one messaging" },
+      { title: "Punishment Zone \u2014 One-to-one messaging" },
       {
         name: "description",
-        content: "A private, paginated one-to-one chat room for two people.",
+        content: "You can be sorry a thousand times and still remain the same person.",
       },
-      { property: "og:title", content: "Secret Chat \u2014 One-to-one messaging" },
+      { property: "og:title", content: "Punishment Zone \u2014 One-to-one messaging" },
       {
         property: "og:description",
-        content: "A private, paginated one-to-one chat room for two people.",
+        content: "You can be sorry a thousand times and still remain the same person.",
       },
     ],
   }),
