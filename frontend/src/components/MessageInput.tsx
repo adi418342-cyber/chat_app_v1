@@ -27,6 +27,16 @@ export function MessageInput({ onSend, isCapReached = false }: { onSend: (conten
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const native = e.nativeEvent as InputEvent;
+    // Mobile keyboards (Gboard, Samsung, iOS) bypass onPaste and fire an
+    // 'input' event with inputType 'insertFromPaste' when the user taps a
+    // clipboard item. Block those here too.
+    if (
+      native.inputType === "insertFromPaste" ||
+      native.inputType === "insertFromPasteAsQuotation"
+    ) {
+      return;
+    }
     setValue(e.target.value);
     // Auto-resize: reset then expand to fit content
     const el = e.target;
