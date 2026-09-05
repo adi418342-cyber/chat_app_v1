@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSession, login } from "@/lib/chat-store";
+import { BACKEND_URL } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -20,6 +21,27 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [serverWarm, setServerWarm] = useState(false);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Ping /api/health on mount so Render wakes up before the user clicks Login.
+  // Free-tier cold starts can take 30-60 s; this hides that delay.
+  useEffect(() => {
+    async function pingUntilWarm() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(8000) });
+        if (res.ok) {
+          setServerWarm(true);
+          if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+        }
+      } catch {
+        // still waking — next interval will retry
+      }
+    }
+    pingUntilWarm();
+    pingIntervalRef.current = setInterval(pingUntilWarm, 8000);
+    return () => { if (pingIntervalRef.current) clearInterval(pingIntervalRef.current); };
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -93,6 +115,12 @@ function LoginPage() {
           {error && (
             <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
+            </p>
+          )}
+
+          {!serverWarm && (
+            <p className="text-center text-xs text-muted-foreground animate-pulse">
+              ⏳ Waking up server… this takes ~30s on first load.
             </p>
           )}
 
