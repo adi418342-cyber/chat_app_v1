@@ -26,15 +26,29 @@ export function MessageInput({ onSend, isCapReached = false }: { onSend: (conten
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  function handleBeforeInput(e: React.FormEvent<HTMLTextAreaElement>) {
     const native = e.nativeEvent as InputEvent;
-    // Mobile keyboards (Gboard, Samsung, iOS) bypass onPaste and fire an
-    // 'input' event with inputType 'insertFromPaste' when the user taps a
-    // clipboard item. Block those here too.
+    // Block paste at the earliest point — before the browser inserts anything.
+    // This is the most reliable path on iOS Safari and Android WebView.
     if (
       native.inputType === "insertFromPaste" ||
-      native.inputType === "insertFromPasteAsQuotation"
+      native.inputType === "insertFromPasteAsQuotation" ||
+      native.inputType === "insertFromDrop"
     ) {
+      e.preventDefault();
+    }
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const native = e.nativeEvent as InputEvent;
+    // Second layer: if beforeinput didn't stop it (older browsers/WebViews),
+    // catch it here and forcibly restore the previous DOM value.
+    if (
+      native.inputType === "insertFromPaste" ||
+      native.inputType === "insertFromPasteAsQuotation" ||
+      native.inputType === "insertFromDrop"
+    ) {
+      e.target.value = value; // restore DOM to the pre-paste state
       return;
     }
     setValue(e.target.value);
@@ -52,6 +66,7 @@ export function MessageInput({ onSend, isCapReached = false }: { onSend: (conten
           rows={1}
           value={value}
           onChange={handleChange}
+          onBeforeInput={handleBeforeInput}
           disabled={isCapReached}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
