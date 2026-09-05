@@ -43,7 +43,7 @@ export function buildSessionMiddleware(): RequestHandler {
     cookie: {
       httpOnly: true,
       secure: env.isProduction, // requires HTTPS in production
-      sameSite: 'strict', // strongest CSRF mitigation — safe for a private 2-person app
+      sameSite: env.isProduction ? 'none' : 'lax', // Must be 'none' for cross-domain (Vercel -> Render)
       maxAge: env.sessionTtlMs,
     },
   });

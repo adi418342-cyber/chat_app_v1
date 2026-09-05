@@ -42,6 +42,17 @@ function ChatPage() {
     isCapReached,
   } = useChat();
 
+  if (error && !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4 text-center">
+        <div className="max-w-md space-y-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={handleLogout} className="text-sm underline hover:text-foreground">Return to login</button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
